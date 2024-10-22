@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+    <title>Price</title>
+</head>
+<body>
+    <div class="add">
+        <input type="text" id="url" placeholder="Add Url : https://in.investing.com/commodities/silver?cid=1219740">
+        <span id="add">+</span>
+    </div>
+    <div class="main-ctr">
+    	<div class="ctr">
+		    <div class="upper">
+				<h1 style="margin-right:10px">Gold</h1>
+				<button class="refresh history"><i class="fa fa-history" style="font-size:18px"></i></button>
+		    </div>
+		    <div class="details">
+				<p>Price: </p>
+				<p1 id="goldPrice">15785</p1>
+				<button class="refresh"><i class="fa fa-refresh" style="font-size:20px"></i></button>
+		    </div>
+		    <div class="graph-ctr">
+				<div class="lower">
+			    	<button id="gh">Graph ↑</button>
+			    	<label class="switch">
+					<input type="checkbox">
+					<span class="slider round"></span>
+			    	</label>
+				</div>
+				<canvas class="hide graph" id="gold"></canvas>
+		    </div>
+    </div>
+</body>
+<script src="script.js"></script>
+</html>
+

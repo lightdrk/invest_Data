@@ -1,0 +1,3 @@
+name of table of urls is urls
+each stocks will have their own table with column naming real_price, id, algo_price
+database name will be portfolio
