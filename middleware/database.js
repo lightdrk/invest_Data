@@ -29,6 +29,15 @@ class database{
 		}
 
 	}
+	
+	async details(){
+		try {
+			const [rows] = await this.connection.query('SELECT * FROM urls');
+			return rows;
+		}catch(err){
+			console.log(err);
+		}
+	}
 
 	async disconnect(){
 		try{
@@ -85,6 +94,7 @@ class database{
 	}
 
 	async addUrl(url, name){
+		console.log(url, name)
 		try{
 			const [result] = await this.connection.execute('insert into urls (Url, Name) values (?, ?)', [url, name]);
 			return result;
@@ -104,10 +114,10 @@ class database{
 		}
 	}
 
-	async addPrice(name, real, algo, time){
+	async addPrice(id, real, algo, date, time){
 		// this is for adding price of stocks
 		try{
-			const [result] = await this.connection.execute('insert into ? (real_price, algo_price, time) values (?, ?, ?)', [id,real, algo, time]);
+			const [result] = await this.connection.execute('insert into portfolio (UrlId,RealPrice, AlgoPrice, Date, Time) values (?, ?, ?, ?, ?)', [id, real, algo, date, time]);
 			return result;
 		}catch(err){
 			console.log('unable to add', err);
@@ -120,7 +130,7 @@ class database{
 		// this will fetch history with certian time limit 
 		try{
 
-			const [rows] = await this.connection.query('SELECT *  FROM ?', [id]);
+			const [rows] = await this.connection.query('SELECT *  FROM portfolio where UrlId= ? AND Date >= NOW() - INTERVAL 2 DAY ', [id]);
 			return rows;
 
 		}catch(err){
@@ -129,6 +139,17 @@ class database{
 		}
 
 
+	}
+
+	async history(id, day){
+		try{
+
+			const [rows] = await this.connection.query('SELECT *  FROM portfolio where UrlId= ? AND Date >= NOW() - INTERVAL ? DAY ', [id, day]);
+			return rows;
+		}catch(err){
+			console.log('fetchProduct error ', err);
+			return 0;
+		}
 	}
 
 

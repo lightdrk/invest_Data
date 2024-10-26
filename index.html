@@ -9,15 +9,58 @@
     <title>Price</title>
 </head>
 <body>
+
+
     <div class="add">
         <input type="text" id="url" placeholder="Add Url : https://in.investing.com/commodities/silver?cid=1219740">
         <span id="add">+</span>
     </div>
+
+
     <div class="main-ctr">
-    	<div class="ctr">
+		
+
+		<div class="notify" id="false">
+			<div class="first">
+				<i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+			</div>
+			<div class="mid">
+				<span>Failed to Add</span>
+			</div>
+			<div class="last">
+				<button class="close" id="fail">
+					<svg xmlns="http://www.w3.org/2000/svg" class="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
+						<path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
+					</svg>
+				</button>
+			</div>
+		</div>
+
+
+		<div class="notify" id="true">
+			<div class="first" style="background:#16a34a">
+				<i class="fa fa-check"></i>
+			</div>
+			<div class="mid" >
+				<span>Added successfully</span>
+			</div>
+			<div class="last">
+				<button class="close" id="fail">
+					<svg xmlns="http://www.w3.org/2000/svg" class="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
+						<path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
+					</svg>
+				</button>
+			</div>
+
+		</div>
+
+		<!-- ctr container ---------------------->
+		<!--
+		<div class="ctr">
 		    <div class="upper">
 				<h1 style="margin-right:10px">Gold</h1>
 				<button class="refresh history"><i class="fa fa-history" style="font-size:18px"></i></button>
+				<button class="refresh cross"><i class="fa fa-close" style="font-size:25px"></i></button>
 		    </div>
 		    <div class="details">
 				<p>Price: </p>
@@ -26,14 +69,30 @@
 		    </div>
 		    <div class="graph-ctr">
 				<div class="lower">
-			    	<button id="gh">Graph ↑</button>
-			    	<label class="switch">
-					<input type="checkbox">
-					<span class="slider round"></span>
-			    	</label>
+			    		<button id="gh">Graph ↑</button>
+			    		<label class="switch">
+						<input type="checkbox">
+						<span class="slider round"></span>
+			    		</label>
 				</div>
 				<canvas class="hide graph" id="gold"></canvas>
+				<table class="hide data-table">
+					<thead>
+						<tr>
+							<th>Real Price</th>
+							<th>Algo Price</th>
+							<th>Date</th>
+							<th>Time</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
 		    </div>
+		</div>
+		-->
+
+
     </div>
 </body>
 <script src="script.js"></script>
