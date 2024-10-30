@@ -25,8 +25,7 @@ let invests = null;
 		let entry = await invests.details(url.Url, url.Id);
 		entry.id = id;
 		entry.algo = entry.price + 10;
-		entry.date = new Date().toISOString().slice(0, 10);
-		entry.time = new Date().toLocaleTimeString('en-US', { hour12: false });
+		entry.date = new Date().toISOString().slice(0, 19).replace('T', ' ');
 		data.push(entry);
 	}
 	console.log(data);
@@ -36,14 +35,13 @@ let invests = null;
 		let newEntry = [];
 		for (let refresh of refreshed_data){
 			refresh.algo = refresh.price + 10;
-			refresh.date = new Date().toISOString().slice(0, 10);
-			refresh.time = new Date().toLocaleTimeString('en-US', { hour12: false });
+			refresh.date = new Date().toISOString().slice(0, 19).replace('T', ' ');
 			newEntry.push(refresh);
 		}
 		console.log(newEntry);
 		await send(newEntry);
 
-	}, 100000);
+	}, 600000);
 })();
 console.log(browser);
 
@@ -58,10 +56,18 @@ app.post('/api/validate', async (req, res)=>{
 	return res.status(200).json({name, 'url': req.body.url});
 });
 
-app.post('/api/update', async (req, res)=>{
+app.get('/api/update/all', async (req, res)=>{
 	console.log(req);
-	let details = "test";
-	return res.status(200).json({ "status": "success", "details": details });
+	let details = await invests.getDetails();
+	console.log(details);
+	return res.status(200).json(details);
+});
+
+app.get('/api/update', async (req, res) => {
+	console.log(req);
+	console.log('*******************',req,'****************')
+	let details = await invests.update(req.query.id);
+	return res.status(200).json(details);
 });
 
 app.listen(PORT, '0.0.0.0', ()=>{

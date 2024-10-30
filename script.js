@@ -18,6 +18,17 @@ async function fetchData(url){
 	}
 }
 
+function change(prev, val){
+	prev = parseFloat(prev.replace(/,/g, ''))
+    val = parseFloat(val.replace(/,/g, ''))
+	if (prev > val){
+		return -1;
+	}else if (val > prev){
+		return 1;
+	}else {
+		return 0;
+	}
+}
 
 async function fetchDataHistory(id){
 	try {
@@ -62,10 +73,30 @@ async function fetchDataGraph(id, day){
 
 }
 
+async function update(id) {
+	let _url = `http://localhost:5000/api/update?id=${id}`;
+	if (!id) {
+		_url = "http://localhost:5000/api/update/all";
+	}
+	try {
+		const response = await fetch(_url,{
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			}
+		});
+		const res = await response.json();
+		return res;
+
+	}catch (err){
+		console.error('unable to send request: ',err)
+	}
+}
 
 document.addEventListener('DOMContentLoaded', async ()=>{
 	const url = 'http://localhost:6600/api/data';
 	let data  = await fetchData(url);
+	
 	data.forEach( (perCtr) => {
 		document.getElementsByClassName('main-ctr')[0].innerHTML += `
 			<div class="ctr" id="${perCtr.Id}c">
@@ -75,9 +106,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 					<button class="refresh cross"><i class="fa fa-close" style="font-size:25px"></i></button>
 			    </div>
 			    <div class="details">
-					<p>price:</p>
-					<p1 id="${perCtr.Name}-${perCtr.Id}">15785</p1>
-					<button class="refresh"><i class="fa fa-refresh" style="font-size:20px"></i></button>
+					<p>Price :</p>
+					<p1 id="algoPrice${perCtr.Id}">15785</p1>
+					<i class="fa fa-caret-down" id="down${perCtr.Id}" style="color: red; display: none"></i>
+					<i class="fa fa-caret-up" id="up${perCtr.Id}" style="color: green; display: none"></i>
+					<button class="refresh updation"><i class="fa fa-refresh" style="font-size:20px"></i></button>
 			    </div>
 			    <div class="graph-ctr">
 					<div class="lower">
@@ -94,7 +127,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 								<th>Real Price</th>
 								<th>Algo Price</th>
 								<th>Date</th>
-								<th>Time</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -134,15 +166,28 @@ function setup(){
 			localStorage.setItem('RealPrice', JSON.stringify(graphData));
 
 			for (let i=graphData.length-1; i >= 0; i--){
-				xValues.push(`${graphData[i].Date} ${graphData[i].Time}`);
-				yValues.push(graphData[i].AlgoPrice);
+				let date = new Date(graphData[i].Date)
+				date = date.toLocaleString('en-US',{
+        			hour: 'numeric',
+        			minute: '2-digit',
+        			hour12: false
+				});
+				xValues.push(date);
+				console.log(graphData[i].AlgoPrice.slice(0,3));
+				yValues.push(parseFloat(graphData[i].AlgoPrice.replace(/,/g, '')));
 			}
 
-			let chart = new Chart(btnGraph.id, {
+			// create the chart and store the instance
+			if (btnGraph.chart) {
+				btnGraph.chart.destroy();
+			}
+
+			btnGraph.chart = new Chart(btnGraph.id, {
 			  type: "line",
 			  data: {
 			    labels: xValues,
 			    datasets: [{
+				  label: 'Price',
 			      fill: false,
 			      lineTension: 0,
 			      backgroundColor: "rgba(0,0,255,1.0)",
@@ -153,39 +198,44 @@ function setup(){
 			  options: {
 			    legend: {display: false},
 			    scales: {
-			      yAxes: [{ticks: {min: 6, max:16}}],
 			    }
 			  }
 			});
 			//
 			//switch changing data from algo price to real price;
-			//
-			console.log('*******', parseInt(parentCtr.id));
-			let fromLocal = JSON.parse(localStorage.getItem('RealPrice'));
-			let newXValues = [];
-			let newYValues = [];
-			for (let i=fromLocal.length-1; i >= 0; i--){
-				newXValues.push(`${graphData[i].Date} ${graphData[i].Time}`);
-				newYValues.push(graphData[i].RealPrice);
-			}
-
 			let switchs = document.getElementById(`${parseInt(parentCtr.id)}mySwitch`);
-			switchs.addEventListener('change',(event) =>{
-				if (event.target.checked) {
-					console.log('changed');
-					chart.data.labels = newXValues;//realPrice data
-					chart.data.datasets[0].data = newYValues;
-					chart.update();
-				}else {
-					///TODO: check may be issue here
-					chart.data.labels = xValues ;//AlgoPrice data
-					chart.data.datasets[0].data = yValues;
-					chart.update();
+			switchs.removeEventListener('change', switchHandler); // remove existing event listener to remvoe glitchy issue
+			switchs.addEventListener('change', switchHandler);
+			function switchHandler(event) {
+            	let newXValues = [];
+            	let newYValues = [];
 
+				if (event.target.checked) {
+					console.log('Switched to Real Price data');
+					let fromLocal = JSON.parse(localStorage.getItem('RealPrice'));
+
+					for (let i = fromLocal.length - 1; i >= 0; i--) {
+						let date = new Date(fromLocal[i].Date);
+						date = date.toLocaleString('en-US', {
+							hour: 'numeric',
+							minute: '2-digit',
+							hour12: false
+						});
+						newXValues.push(date);
+						newYValues.push(fromLocal[i].RealPrice);
+					}
+
+					chart.data.labels = newXValues;
+					chart.data.datasets[0].data = newYValues;
+				} else {
+					console.log('Switched to Algo Price data');
+					chart.data.labels = xValues; // AlgoPrice data
+					chart.data.datasets[0].data = yValues;
 				}
 
+				chart.update();
+			}
 
-			});
 		});
 	});
 
@@ -270,55 +320,29 @@ function setup(){
 		document.getElementById('add').disabled=false;
 	});
 
-	// this logic does the updation on specific time
+	let refreshBtnEls = document.querySelectorAll('.updation');
+	let historyBtnEls = document.querySelectorAll('.history');
 
-	function update(ids,callback) {
-		const db_url = "http://localhost:5000/api/update";
-		let data = fetch(db_url, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(ids) 
-			}).then(response => {
-				if (!response.ok){
-					throw new Error(response);
-					console.log('custom  -->',response);
-				}
-
-				return response.json().then(data => {
-					callback(data);
-				});
-			}).catch((error) => {
-				console.log(error);
-				console.error(error);
-			});
-	}
-
-	setInterval(() => {
-		update({'a':'a'},(data)=>{
-			console.log(data);
+	// this adds spin on hover
+	refreshBtnEls.forEach((el) => {
+		el.addEventListener("mouseover", ()=>{
+			el.classList.add('fa-spin');
 		});
-	},500000);
-
-	document.getElementsByClassName('fa-refresh')[0].addEventListener("mouseover", ()=>{
-		let refresh = document.getElementsByClassName('fa-refresh');
-		refresh[0].classList.add('fa-spin');
+		
+		el.addEventListener("mouseout", ()=>{
+			el.classList.remove('fa-spin');
+		});
 	});
 
-	document.getElementsByClassName('fa-refresh')[0].addEventListener("mouseout", ()=>{
-		let refresh = document.getElementsByClassName('fa-refresh');
-		refresh[0].classList.remove('fa-spin');
-	});
+	historyBtnEls.forEach((el) => {
+		el.addEventListener("mouseover", ()=>{
+			el.classList.add('fa-spin');
+		});
 
-	document.getElementsByClassName('fa-history')[0].addEventListener("mouseover", ()=>{
-		let history = document.getElementsByClassName('fa-history');
-		history[0].classList.add('fa-spin');
-	});
+		el.addEventListener("mouseout", ()=>{
+			el.classList.remove('fa-spin');
+		});
 
-	document.getElementsByClassName('fa-history')[0].addEventListener("mouseout", ()=>{
-		let history = document.getElementsByClassName('fa-history');
-		history[0].classList.remove('fa-spin');
 	});
 
 
@@ -359,7 +383,6 @@ function setup(){
 					<td>${column.RealPrice}</td>
 					<td>${column.AlgoPrice}</td>
 					<td>${column.Date}</td>
-					<td>${column.Time}</td>
 				`
 				tbody.appendChild(row);
 		
@@ -377,4 +400,48 @@ function setup(){
 			}
 		});
 	});
+
+	setInterval(async ()=> {
+		let res = await update(null);
+		console.log(res);
+		for (let data of res){
+			//algo needed
+			let priceEl = document.querySelector(`#algoPrice${data.id}`);
+			console.log('price of the el ---> ',priceEl.textContent, data.price);
+			let ch = change(priceEl.textContent, data.price);
+			console.log(document.getElementById(`up${data.id}`).display);
+			if (ch == 1){
+				console.log('up')
+				document.getElementById(`up${data.id}`).style.display = 'inline-block';
+				document.getElementById(`down${data.id}`).style.display = 'none';
+			}else if(ch == -1){
+				console.log('down');
+				document.getElementById(`up${data.id}`).style.display = 'none';
+				document.getElementById(`down${data.id}`).style.display = 'inline-block';
+
+			}else {
+				console.log('nothing');
+				document.getElementById(`up${data.id}`).style.display = 'none';
+				document.getElementById(`down${data.id}`).style.display = 'none';
+			
+			}
+			priceEl.textContent = data.price;
+		}
+	}, 10000);
+	
+	let refreshBtns = document.querySelectorAll('.updation');
+	console.log(refreshBtns);
+	refreshBtns.forEach((refreshBtn) => {
+		refreshBtn.addEventListener('click', async () => {
+			refreshBtn.disabled = true;
+			// for now i am getting id from the div.ctr
+			let id = parseInt(refreshBtn.offsetParent.id);
+			let response = await update(id);
+			document.querySelector(`#algoPrice${response.id}`).textContent = response.price;
+			refreshBtn.disabled = false;
+
+		});
+
+	})
+
 }

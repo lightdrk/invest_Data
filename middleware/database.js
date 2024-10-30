@@ -117,7 +117,7 @@ class database{
 	async addPrice(id, real, algo, date, time){
 		// this is for adding price of stocks
 		try{
-			const [result] = await this.connection.execute('insert into portfolio (UrlId,RealPrice, AlgoPrice, Date, Time) values (?, ?, ?, ?, ?)', [id, real, algo, date, time]);
+			const [result] = await this.connection.execute('insert into portfolio (UrlId,RealPrice, AlgoPrice, Date) values (?, ?, ?, ?)', [id, real, algo, date]);
 			return result;
 		}catch(err){
 			console.log('unable to add', err);

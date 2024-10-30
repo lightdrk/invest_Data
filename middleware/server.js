@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const database = require('./database');
 
@@ -10,6 +11,11 @@ let config = {
 	"database": "invest"
 }
 
+const SECRET_KEY = 'your_secret_key';
+const validUser = {
+	username: 'mohit',
+	password: 'test@123'
+};
 
 const app = express();
 const PORT = 6600;
@@ -24,7 +30,40 @@ if (check) {
 app.use(cors());
 app.use(bodyParser.json());
 
-app.get('/api/data', async(req, res) =>{
+function authenticateToken(req, res, next) {
+    const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1]; // Get token from the Authorization header
+
+    if (!token) {
+        return res.sendStatus(401); // No token, unauthorized
+    }
+
+    jwt.verify(token, SECRET_KEY, (err, user) => {
+        if (err) {
+            return res.sendStatus(403); // Token is no longer valid
+        }
+        req.user = user; // Attach user information to the request object
+        next(); // Proceed to the next middleware or route handler
+    });
+}
+// login model
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === validUser.username && password === validUser.password) {
+        const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
+        res.json({ token });
+    } else {
+        res.status(401).send('Invalid credentials');
+    }
+});
+
+
+
+
+
+
+// below main function 
+
+app.get('/api/data',async(req, res) =>{
 	console.log(req); 
 	await db.connectionPool();
 	let data = await db.details();
@@ -47,7 +86,7 @@ app.post('/backend/api/add', async (req, res)=>{
 	console.log(req);
 	await db.connectionPool();
 	for (let url of req.body){
-		let isAdd = await db.addPrice(url.id, url.price, url.algo, url.date, url.time);
+		let isAdd = await db.addPrice(url.id, url.price, url.algo, url.date);
 		if (isAdd){
 			console.log('Successfull added');
 		}
@@ -73,14 +112,14 @@ app.get('/api/history', async (req, res)=>{
 app.post('/api/graph', async (req, res)=>{
 	//get history for graph 
 	console.log(req);
-	db.fetchHistory(req.id);
+	await db.fetchHistory(req.id);
 	let history = db.connectionRelease();
 	return res.status(200).json({ "status": "success", "history": history });
 });
 
 app.post('/api/history', async (req, res)=>{
 	console.log(req);
-	db.fetchHistory(req.id);
+	await db.fetchHistory(req.id);
 	let history = db.connectionRelease();
 	return res.status(200).json({ "status": "success", "history": history });
 });

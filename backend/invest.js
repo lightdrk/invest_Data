@@ -32,9 +32,16 @@ class Invest {
 		}
 	}
 
-	async update(url) {
+	async update(id) {
+		//get the price for a specific id 
 
-		
+		let page = this.urlsObject[id].page;
+		//await page.bringToFront();
+		let priceData = await page.$$('div[data-test="instrument-price-last"]');
+		let name = await page.$$('h1');
+		let name_txt = await page.evaluate( el => el.innerText, name[0]);
+		let price_txt = await page.evaluate( el => el.innerText, priceData[0]);
+		return {'id': id, 'name': name_txt, 'price': price_txt};
 	}
 
 	async details(url, id) {
@@ -59,6 +66,7 @@ class Invest {
 		let data = [];
 		for (let id of this.idsObject){
 			let page = this.urlsObject[id].page;
+			//await page.bringToFront();
 
 			let priceData = await page.$$('div[data-test="instrument-price-last"]');
 			let name = await page.$$('h1');
@@ -68,7 +76,6 @@ class Invest {
 		}
 		return data ;
 	}
-
 
 }
 
