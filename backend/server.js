@@ -50,24 +50,34 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.post('/api/validate', async (req, res)=>{
-	console.log(req);
+	console.log('/api/validate');
 	console.log(req.body.url);
 	let name = await invests.validate(req.body.url);
 	return res.status(200).json({name, 'url': req.body.url});
 });
 
 app.get('/api/update/all', async (req, res)=>{
-	console.log(req);
 	let details = await invests.getDetails();
 	console.log(details);
 	return res.status(200).json(details);
 });
 
 app.get('/api/update', async (req, res) => {
-	console.log(req);
-	console.log('*******************',req,'****************')
+	console.log('*******************','/api/update','****************')
 	let details = await invests.update(req.query.id);
 	return res.status(200).json(details);
+});
+
+app.get('/api/new', async (req, res) => {
+	console.log('api/new', req.query.url, req.query.id);
+	let details = await invests.details(req.query.url, req.query.id);
+	return res.status(200).json(details);
+});
+
+app.get('/api/close', async (req, res) =>{
+	console.log('***********','/api/close', req.query.id, '***********');
+	await invests.close(req.query.id);
+	return res.status(200).json({'status': 'success'});
 });
 
 app.listen(PORT, '0.0.0.0', ()=>{

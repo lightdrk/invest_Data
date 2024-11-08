@@ -73,6 +73,25 @@ async function fetchDataGraph(id, day){
 
 }
 
+async function remove(id){
+	try {
+		const response = await fetch(`http://localhost:6600/api/remove?id=${id}`,{
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			}
+		});
+		if (!response.ok){
+			throw new Error(`HTTP error ! status:, ${response.status}`);
+		}
+		const data = await response.json();
+		console.log(data);
+		return data;
+	}catch (err) {
+		console.error('Error Remove data:', err);
+	}
+}
+
 async function update(id) {
 	let _url = `http://localhost:5000/api/update?id=${id}`;
 	if (!id) {
@@ -101,9 +120,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 		document.getElementsByClassName('main-ctr')[0].innerHTML += `
 			<div class="ctr" id="${perCtr.Id}c">
 			    <div class="upper">
-					<h1 style="font-size:20px; margin-right:10px; overflow:hidden; text-overflow: ellipsis; white-space: nowrap">${perCtr.Name}</h1>
+					<h1 style="font-size:18px; margin-right:10px; overflow:hidden; text-overflow: ellipsis; white-space: nowrap">${perCtr.Name}</h1>
 					<button class="refresh history"><i class="fa fa-history" style="font-size:18px"></i></button>
 					<button class="refresh cross"><i class="fa fa-close" style="font-size:25px"></i></button>
+					<button class="refresh remove"><i class="fa fa-minus-circle" style="font-size:24px"></i></button>
 			    </div>
 			    <div class="details">
 					<p>Price :</p>
@@ -292,7 +312,7 @@ function setup(){
 						// sending data to db ..
 						
 						db_url = "http://localhost:6600/api/addurl";
-						addIn(res, db_url, (response) => {
+						addIn(res, db_url, async (response) => {
 							console.log(response)
 							if (response.status === 'success'){
 								notify('true');
@@ -301,6 +321,23 @@ function setup(){
 									document.getElementById("url").classList.remove('success');
 									document.getElementById("url").value = '';
 								},2000);
+								const id = response.id;
+
+								try {
+									console.log(toAdd)
+									let _url = `http://localhost:5000/api/new?id=${parseInt(id)}&url=${toAdd}`
+									const response = await fetch(_url,{
+										method: 'GET',
+										headers: {
+											'Content-Type': 'application/json',
+										}
+									});
+									const res = await response.json();
+									console.log(res);
+									location.reload();
+								}catch (err){
+									console.error('unable to send request: ',err)
+								}
 							}else {
 								notify('false');
 							}
@@ -336,7 +373,7 @@ function setup(){
 
 	historyBtnEls.forEach((el) => {
 		el.addEventListener("mouseover", ()=>{
-			el.classList.add('fa-spin');
+			el.classList.toggle('fa-spin');
 		});
 
 		el.addEventListener("mouseout", ()=>{
@@ -444,4 +481,27 @@ function setup(){
 
 	})
 
+	// handles removal of the ctr 
+	let removeBtns =  document.querySelectorAll('.remove')
+	removeBtns.forEach((removeBtn) => {
+		removeBtn.addEventListener('click', async () =>{
+			const id = parseInt(removeBtn.offsetParent.id);
+			console.log(id);
+			let isRemoved = await remove(id)
+			console.log('--------->',isRemoved);
+			if (isRemoved.status === 'success') {
+				const response = await fetch(`http://localhost:5000/api/close?id=${parseInt(id)}`,{
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+					}
+				});
+				const res = await response.json();
+				if (res.status === 'success'){
+					console.log('Tab in backend is closed ');
+					location.reload();
+				}
+			}
+		});
+	});
 }

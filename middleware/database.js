@@ -97,7 +97,13 @@ class database{
 		console.log(url, name)
 		try{
 			const [result] = await this.connection.execute('insert into urls (Url, Name) values (?, ?)', [url, name]);
-			return result;
+			if (result.affectedRows > 0) {
+				// Return the ID of the newly inserted record
+				const insertedId = result.insertId;
+				return insertedId;
+			} else {
+				throw new Error('Insert operation failed');
+			}
 		}catch(err){
 			console.log('unable to add', err);
 			return 0;
@@ -146,6 +152,20 @@ class database{
 
 			const [rows] = await this.connection.query('SELECT *  FROM portfolio where UrlId= ? AND Date >= NOW() - INTERVAL ? DAY ', [id, day]);
 			return rows;
+		}catch(err){
+			console.log('fetchProduct error ', err);
+			return 0;
+		}
+	}
+
+	async remove(id){
+		try{
+			const [del] = await this.connection.query('DELETE FROM portfolio where UrlId= ?', [id]);
+			if (del){
+				const [row] = await this.connection.query('DELETE FROM urls where Id = ?', [id]);
+				return row;
+			}
+
 		}catch(err){
 			console.log('fetchProduct error ', err);
 			return 0;

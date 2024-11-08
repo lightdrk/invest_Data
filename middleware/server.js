@@ -77,9 +77,9 @@ app.post('/api/addurl', async (req, res)=>{
 	console.log(req);
 	console.log(req.body);
 	await db.connectionPool();
-	await db.addUrl(req.body.url, req.body.name);
+	let id = await db.addUrl(req.body.url, req.body.name);
 	await db.connectionRelease();
-	return res.status(200).json({ "status": "success", "details": req.body });
+	return res.status(200).json({ "status": "success", id });
 });
 
 app.post('/backend/api/add', async (req, res)=>{
@@ -124,7 +124,15 @@ app.post('/api/history', async (req, res)=>{
 	return res.status(200).json({ "status": "success", "history": history });
 });
 
-
+app.get('/api/remove', async (req, res)=>{
+	//here need id of those we want to get history of 
+	console.log(req.query);
+	const id = req.query.id;
+	await db.connectionPool();
+	let removed = await db.remove(id);
+	db.connectionRelease();
+	return res.status(200).json({"status": "success"});
+});
 
 app.listen(PORT, '0.0.0.0', ()=>{
 	console.log(`${PORT}`);
