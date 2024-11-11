@@ -33,7 +33,6 @@ function change(prev, val){
 
 function equationEval(eq,price){
 	// this funciton evaluates the equation and returs results
-	console.log('--------------->',typeof(eq), eq);
 	if (eq == null){
 		return price;
 	}
@@ -237,7 +236,8 @@ function setup(){
 			console.log(graphData[0].Time);
 			let xValues = [];
 			let yValues = [];
-			localStorage.setItem('RealPrice', JSON.stringify(graphData));
+			console.log('graph data --------->',btnGraph.id);
+			localStorage.setItem(`${btnGraph.id}price`, JSON.stringify(graphData));
 
 			for (let i=graphData.length-1; i >= 0; i--){
 				let date = new Date(graphData[i].Date)
@@ -247,8 +247,12 @@ function setup(){
         			hour12: false
 				});
 				xValues.push(date);
-				console.log(graphData[i].AlgoPrice.slice(0,3));
-				yValues.push(parseFloat(graphData[i].AlgoPrice.replace(/,/g, '')));
+				console.log('graph Data---------->', graphData[i]);
+				if (graphData[i].AlgoPrice){
+					console.log(graphData[i].AlgoPrice.slice(0,3));
+					yValues.push(parseFloat(graphData[i].AlgoPrice.replace(/,/g, '')));
+				}
+				yValues.push(parseFloat(graphData[i].RealPrice.replace(/,/g, '')));
 			}
 
 			// create the chart and store the instance
@@ -286,7 +290,7 @@ function setup(){
 
 				if (event.target.checked) {
 					console.log('Switched to Real Price data');
-					let fromLocal = JSON.parse(localStorage.getItem('RealPrice'));
+					let fromLocal = JSON.parse(localStorage.getItem(parseInt(`${parentCtr.id}price`)));
 
 					for (let i = fromLocal.length - 1; i >= 0; i--) {
 						let date = new Date(fromLocal[i].Date);
@@ -620,8 +624,8 @@ function setup(){
 						let response = await updateEq(id, equation);
 						if (response){
 							console.log('Added ');
+							location.reload();
 						}
-						alert(`Equation submitted: ${equation}`);
 					} else {
 						alert('Please enter an equation.');
 					}
