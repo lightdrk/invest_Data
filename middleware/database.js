@@ -120,7 +120,7 @@ class database{
 		}
 	}
 
-	async addPrice(id, real, algo, date, time){
+	async addPrice(id, real, algo, date){
 		// this is for adding price of stocks
 		try{
 			const [result] = await this.connection.execute('insert into portfolio (UrlId,RealPrice, AlgoPrice, Date) values (?, ?, ?, ?)', [id, real, algo, date]);
@@ -172,7 +172,28 @@ class database{
 		}
 	}
 
+ 	async updateAlgo(eq, id){
+		try{
 
+			const [rows] = await this.connection.query('UPDATE urls SET Eq = ? where Id= ?', [eq, id]);
+			return rows;
+		}catch(err){
+			console.log('equation update failed', err);
+			return 0;
+		}
+
+	}
+
+	async equation(id) {
+		try {
+			const [rows] = await this.connection.query('SELECT * FROM urls WHERE Id = ?', [id]);
+			return rows;
+
+		}catch (err) {
+			console.log('Undable to fetch equation', err);
+			return 0;
+		}
+	}
 }
 
 module.exports = database;

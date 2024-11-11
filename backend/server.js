@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const Invest = require('./invest');
+const Calc = require('./equation');
 const { ask, send } = require('./axios-request.js');
 const bodyParser = require('body-parser');
 const puppeteer = require('puppeteer');
@@ -10,6 +11,7 @@ const PORT = 5000;
 
 let browser = null;
 let invests = null;
+
 (async ()=>{
 	browser = await puppeteer.launch({
 			headless: false,
@@ -17,31 +19,29 @@ let invests = null;
 		});
 	invests = new Invest(browser);
 	let urls = await ask();
-	console.log('urls ---> ', urls);
+	let eq = {};
 	let data = [];
 	for (let url of urls){
-		console.log(url);
 		let id = url.Id;
+		eq[`${id}`] = `${url.Eq}`;
 		let entry = await invests.details(url.Url, url.Id);
 		entry.id = id;
-		entry.algo = entry.price + 10;
+		entry.algo = Calc(eq[id],entry);
 		entry.date = new Date().toISOString().slice(0, 19).replace('T', ' ');
 		data.push(entry);
 	}
-	console.log(data);
 	await send(data);
 	setInterval(async () => { 
 		let refreshed_data = await invests.getDetails();
 		let newEntry = [];
 		for (let refresh of refreshed_data){
-			refresh.algo = refresh.price + 10;
+			refresh.algo = Calc(eq[refresh.id],refresh);
 			refresh.date = new Date().toISOString().slice(0, 19).replace('T', ' ');
 			newEntry.push(refresh);
 		}
-		console.log(newEntry);
 		await send(newEntry);
 
-	}, 600000);
+	}, 20000);
 })();
 console.log(browser);
 

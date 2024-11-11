@@ -4,7 +4,7 @@ async function ask() {
 	try {
 
 		const response = await axios.get('http://localhost:6600/api/data');
-		console.log(response);
+		console.log(response.data);
 		return response.data;
 
 	}catch (err){
@@ -16,7 +16,7 @@ async function ask() {
 async function send(data){
 	try {
 		const response = await axios.post('http://localhost:6600/backend/api/add', data);
-		console.log(response);
+		console.log(response.data);
 		return response;
 	}catch (err){
 		console.error('Error sending request', err);

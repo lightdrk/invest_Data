@@ -30,6 +30,19 @@ function change(prev, val){
 	}
 }
 
+
+function equationEval(eq,price){
+	// this funciton evaluates the equation and returs results
+	console.log('--------------->',typeof(eq), eq);
+	if (eq == null){
+		return price;
+	}
+	price = parseFloat(price.replace(/,/g, ''));
+	let exp = eq.replace("price",price);
+	let result = eval(exp);
+	return result;
+}
+
 async function fetchDataHistory(id){
 	try {
 		const response = await fetch(`http://localhost:6600/api/history?id=${id}`,{
@@ -112,11 +125,50 @@ async function update(id) {
 	}
 }
 
+async function updateEq(id,eq){
+	try {
+		const response = await fetch(`http://localhost:6600/api/update?id=${id}&eq=${eq}`,{
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			}
+		});
+		if (!response.ok){
+			throw new Error(`HTTP error ! status:, ${response.status}`);
+		}
+		const data = await response.json();
+		console.log(data);
+		return data;
+	}catch (err) {
+		console.error('Error Remove data:', err);
+	}
+}
+
+async function equation(id){
+	try {
+		const response = await fetch(`http://localhost:6600/api/remove?id=${id}`,{
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			}
+		});
+		if (!response.ok){
+			throw new Error(`HTTP error ! status:, ${response.status}`);
+		}
+		const data = await response.json();
+		return data;
+	}catch (err) {
+		console.error('Error Remove data:', err);
+	}
+}
+
 document.addEventListener('DOMContentLoaded', async ()=>{
 	const url = 'http://localhost:6600/api/data';
 	let data  = await fetchData(url);
 	
 	data.forEach( (perCtr) => {
+		console.log(perCtr);
+		localStorage.setItem(perCtr.Id, JSON.stringify(perCtr));
 		document.getElementsByClassName('main-ctr')[0].innerHTML += `
 			<div class="ctr" id="${perCtr.Id}c">
 			    <div class="upper">
@@ -127,10 +179,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 			    </div>
 			    <div class="details">
 					<p>Price :</p>
-					<p1 id="algoPrice${perCtr.Id}">15785</p1>
+					<p1	id="algoPrice${perCtr.Id}">----</p1>
+					<p1 id="price${perCtr.Id}">15785</p1>
 					<i class="fa fa-caret-down" id="down${perCtr.Id}" style="color: red; display: none"></i>
 					<i class="fa fa-caret-up" id="up${perCtr.Id}" style="color: green; display: none"></i>
 					<button class="refresh updation"><i class="fa fa-refresh" style="font-size:20px"></i></button>
+					<button class="refresh equation"><i class="fa fa-calculator" style="font-size:19px"></i></button>
 			    </div>
 			    <div class="graph-ctr">
 					<div class="lower">
@@ -348,6 +402,7 @@ function setup(){
 						setTimeout(()=>{
 							document.getElementById("url").classList.remove('failed');
 						},1200);
+						notify('false');
 					}
 				});
 			}
@@ -438,13 +493,16 @@ function setup(){
 		});
 	});
 
+
+	
+	//update the price at set interval 
 	setInterval(async ()=> {
 		let res = await update(null);
 		console.log(res);
 		for (let data of res){
 			//algo needed
-			let priceEl = document.querySelector(`#algoPrice${data.id}`);
-			console.log('price of the el ---> ',priceEl.textContent, data.price);
+			let priceEl = document.querySelector(`#price${data.id}`);
+			let algoEl = document.querySelector(`#algoPrice${data.id}`)
 			let ch = change(priceEl.textContent, data.price);
 			console.log(document.getElementById(`up${data.id}`).display);
 			if (ch == 1){
@@ -463,9 +521,14 @@ function setup(){
 			
 			}
 			priceEl.textContent = data.price;
+			let equation = JSON.parse(localStorage.getItem(data.id))
+			algoEl.textContent = equationEval( equation.Eq, data.price);
 		}
 	}, 10000);
 	
+
+
+
 	let refreshBtns = document.querySelectorAll('.updation');
 	console.log(refreshBtns);
 	refreshBtns.forEach((refreshBtn) => {
@@ -474,7 +537,9 @@ function setup(){
 			// for now i am getting id from the div.ctr
 			let id = parseInt(refreshBtn.offsetParent.id);
 			let response = await update(id);
-			document.querySelector(`#algoPrice${response.id}`).textContent = response.price;
+			let equation = JSON.parse(localStorage.getItem(data.id))
+			document.querySelector(`#algoPrice${response.id}`).textContent =equationEval(equation.Eq, response.price);
+			document.querySelector(`#price${response.id}`).textContent = response.price;
 			refreshBtn.disabled = false;
 
 		});
@@ -504,4 +569,84 @@ function setup(){
 			}
 		});
 	});
+
+	
+	// add equation on click 
+	//
+	let equationBtns = document.querySelectorAll('.equation');
+	equationBtns.forEach((equationBtn) => {
+		let parentDiv = equationBtn.offsetParent;
+
+		const id = parseInt(parentDiv.id);
+		equationBtn.addEventListener("click", () => {
+			equationBtn.style.display = "none";
+			document.querySelector('.history').style.display = "none";
+
+			let lower = parentDiv.querySelector('.graph-ctr').querySelector('.lower');
+			let cross = parentDiv.querySelector('.upper').querySelector('.cross');
+			cross.style.display = 'block';
+			lower.style.display = 'none';
+			parentDiv.querySelector('.details').style.display = 'none';
+			
+			// Create and append the input area for the equation
+			let equationArea = parentDiv.querySelector('.equation-area');
+			
+			// Check if an equation area already exists, otherwise create one
+			if (!equationArea) {
+				equationArea = document.createElement('textarea');
+				equationArea.classList.add('equation-area');
+				equationArea.placeholder = 'Enter your equation here...';
+				parentDiv.appendChild(equationArea);
+			}
+			equationArea.style.display = 'block'; // Show the equation area
+
+		// Create and append the "Submit Equation" button
+			let submitBtn = parentDiv.querySelector('.submit-equation-btn');
+			
+			// Check if the button already exists, otherwise create one
+			if (!submitBtn) {
+				submitBtn = document.createElement('button');
+				submitBtn.classList.add('submit-equation-btn');
+				submitBtn.innerText = 'Submit Equation';
+				parentDiv.appendChild(submitBtn);
+
+				// Add event listener for the button
+				submitBtn.addEventListener('click', async () => {
+					let equation = equationArea.value.trim();
+					if (equation) {
+						console.log('Equation Submitted: ', equation);
+						// You can also send this equation to the server or perform other actions
+						// For now, it will just log it to the console
+						let response = await updateEq(id, equation);
+						if (response){
+							console.log('Added ');
+						}
+						alert(`Equation submitted: ${equation}`);
+					} else {
+						alert('Please enter an equation.');
+					}
+				});
+			}
+			submitBtn.style.display = 'inline-block'; // Show the submit button
+			console.log('parent div is here ----->>', parentDiv);
+
+			// Add event listener to cross button for hiding the equation area
+				cross.addEventListener('click', () => {
+					equationArea.style.display = 'none'; // Hide equation area
+					submitBtn.style.display = 'none'; // Hide the submit button
+					parentDiv.querySelector('.upper').querySelector('.cross').style.display = 'none';
+					equationBtn.style.display = "inline-block"; // Show the equation button again
+					parentDiv.querySelector('.details').style.display = 'flex'; // Show the details section
+					lower.style.display = 'flex'; // Show the lower section
+					document.querySelector('.history').style.display = "inline-block";
+
+				});
+		});
+	});
+
+
+
+
+
+
 }

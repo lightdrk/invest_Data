@@ -64,7 +64,6 @@ app.post('/login', (req, res) => {
 // below main function 
 
 app.get('/api/data',async(req, res) =>{
-	console.log(req); 
 	await db.connectionPool();
 	let data = await db.details();
 	console.log(data);
@@ -74,7 +73,6 @@ app.get('/api/data',async(req, res) =>{
 
 app.post('/api/addurl', async (req, res)=>{
 	//to add url to portfolio
-	console.log(req);
 	console.log(req.body);
 	await db.connectionPool();
 	let id = await db.addUrl(req.body.url, req.body.name);
@@ -83,9 +81,9 @@ app.post('/api/addurl', async (req, res)=>{
 });
 
 app.post('/backend/api/add', async (req, res)=>{
-	console.log(req);
 	await db.connectionPool();
 	for (let url of req.body){
+		console.log(url);
 		let isAdd = await db.addPrice(url.id, url.price, url.algo, url.date);
 		if (isAdd){
 			console.log('Successfull added');
@@ -111,14 +109,12 @@ app.get('/api/history', async (req, res)=>{
 
 app.post('/api/graph', async (req, res)=>{
 	//get history for graph 
-	console.log(req);
 	await db.fetchHistory(req.id);
 	let history = db.connectionRelease();
 	return res.status(200).json({ "status": "success", "history": history });
 });
 
 app.post('/api/history', async (req, res)=>{
-	console.log(req);
 	await db.fetchHistory(req.id);
 	let history = db.connectionRelease();
 	return res.status(200).json({ "status": "success", "history": history });
@@ -130,9 +126,31 @@ app.get('/api/remove', async (req, res)=>{
 	const id = req.query.id;
 	await db.connectionPool();
 	let removed = await db.remove(id);
-	db.connectionRelease();
+	await db.connectionRelease();
 	return res.status(200).json({"status": "success"});
 });
+
+app.get('/api/update', async (req, res)=>{
+	//this will update eq 
+	const id = req.query.id;
+	const eq = req.query.eq;
+	console.log(req.query)
+	await db.connectionPool();
+	let update = await db.updateAlgo(eq, id);
+	await db.connectionRelease();
+	return res.status(200).json(update);
+});
+
+app.get('/api/eq', async (req, res) =>{
+	//this will get eq
+	const id = req.query.id;
+	await db.connectionPool();
+	const eq = await db.equation(id);
+	await db.connectionRelease();
+	return res.status(200).json(eq);
+	
+});
+
 
 app.listen(PORT, '0.0.0.0', ()=>{
 	console.log(`${PORT}`);
