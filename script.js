@@ -1,3 +1,5 @@
+let usdInr = 84;
+
 async function fetchData(url){
 	try {
 		const response = await fetch(url, {
@@ -161,10 +163,29 @@ async function equation(id){
 	}
 }
 
+async function exchange(id){
+	try {
+		const response = await fetch(`http://localhost:5000/api/exchange`,{
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			}
+		});
+		if (!response.ok){
+			throw new Error(`HTTP error ! status:, ${response.status}`);
+		}
+		const data = await response.json();
+		return data;
+	}catch (err) {
+		console.error('Error Remove data:', err);
+	}
+}
+
 document.addEventListener('DOMContentLoaded', async ()=>{
 	const url = 'http://localhost:6600/api/data';
 	let data  = await fetchData(url);
-	
+	usdInr = await exchange(); 
+
 	data.forEach( (perCtr) => {
 		console.log(perCtr);
 		localStorage.setItem(perCtr.Id, JSON.stringify(perCtr));
@@ -502,6 +523,7 @@ function setup(){
 	//update the price at set interval 
 	setInterval(async ()=> {
 		let res = await update(null);
+		usdInr = await exchange();
 		console.log(res);
 		for (let data of res){
 			//algo needed
@@ -541,7 +563,7 @@ function setup(){
 			// for now i am getting id from the div.ctr
 			let id = parseInt(refreshBtn.offsetParent.id);
 			let response = await update(id);
-			let equation = JSON.parse(localStorage.getItem(data.id))
+			let equation = JSON.parse(localStorage.getItem(id))
 			document.querySelector(`#algoPrice${response.id}`).textContent =equationEval(equation.Eq, response.price);
 			document.querySelector(`#price${response.id}`).textContent = response.price;
 			refreshBtn.disabled = false;
@@ -599,7 +621,7 @@ function setup(){
 			if (!equationArea) {
 				equationArea = document.createElement('textarea');
 				equationArea.classList.add('equation-area');
-				equationArea.placeholder = 'Enter your equation here...';
+				equationArea.placeholder = `Enter your equation here...\n Example:- price*12 + usdInr\nprice :- current price\n usdInr :- Exchange rate of usd and inr`;
 				parentDiv.appendChild(equationArea);
 			}
 			equationArea.style.display = 'block'; // Show the equation area
@@ -623,7 +645,14 @@ function setup(){
 						// For now, it will just log it to the console
 						let response = await updateEq(id, equation);
 						if (response){
-							console.log('Added ');
+							console.log('Added');
+							let rs = await fetch(`http://localhost:5000/api/update-eq?id=${id}&eq=${equation}`,{
+								method: 'GET',
+								headers: {
+											'Content-Type': 'application/json',
+								}
+							});	
+							console.log('success fully added eq--->', rs.body);
 							location.reload();
 						}
 					} else {
