@@ -4,6 +4,7 @@ class Invest {
 		this.browser = browser; 
 		this.urlsObject = {};
 		this.idsObject = [];
+		this.usdExPage = null;
 	}
 	
 	async validate(url){
@@ -78,6 +79,23 @@ class Invest {
 			data.push({'id': id, 'name': name_txt, 'price': price_txt});
 		}
 		return data ;
+	}
+
+	async usdExchange(){
+		if (!this.usdExPage){
+			const context = await this.browser.createBrowserContext();
+			this.usdExPage = await context.newPage();
+			await this.usdExPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36');
+			await this.usdExPage.setExtraHTTPHeaders({
+    				'Accept-Language': 'en-US,en;q=0.9',
+    				'Accept-Encoding': 'gzip, deflate, br',
+			});
+			await this.usdExPage.goto("https://in.investing.com/currencies/usd-inr", {waitUntil: 'domcontentloaded'});
+		}
+		let priceData = await this.usdExPage.$$('div[data-test="instrument-price-last"]');
+		let price_txt = await this.usdExPage.evaluate( el => el.innerText, priceData[0]);
+
+		return price_txt;
 	}
 
 	async close(id) {

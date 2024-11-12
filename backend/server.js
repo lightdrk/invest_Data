@@ -11,7 +11,8 @@ const PORT = 5000;
 
 let browser = null;
 let invests = null;
-
+let eq = {};
+let usdInr = '84';
 (async ()=>{
 	browser = await puppeteer.launch({
 			headless: false,
@@ -19,13 +20,13 @@ let invests = null;
 		});
 	invests = new Invest(browser);
 	let urls = await ask();
-	let eq = {};
 	let data = [];
 	for (let url of urls){
 		let id = url.Id;
 		eq[`${id}`] = `${url.Eq}`;
 		let entry = await invests.details(url.Url, url.Id);
 		entry.id = id;
+		entry['usdInr'] = usdInr;
 		entry.algo = Calc(eq[id],entry);
 		entry.date = new Date().toISOString().slice(0, 19).replace('T', ' ');
 		data.push(entry);
@@ -35,6 +36,7 @@ let invests = null;
 		let refreshed_data = await invests.getDetails();
 		let newEntry = [];
 		for (let refresh of refreshed_data){
+			refresh['usdInr'] = usdInr;
 			refresh.algo = Calc(eq[refresh.id],refresh);
 			refresh.date = new Date().toISOString().slice(0, 19).replace('T', ' ');
 			newEntry.push(refresh);
@@ -57,6 +59,7 @@ app.post('/api/validate', async (req, res)=>{
 });
 
 app.get('/api/update/all', async (req, res)=>{
+	console.log('check eq variable--------->',eq);
 	let details = await invests.getDetails();
 	console.log(details);
 	return res.status(200).json(details);
@@ -75,10 +78,21 @@ app.get('/api/new', async (req, res) => {
 });
 
 app.get('/api/close', async (req, res) =>{
-	console.log('***********','/api/close', req.query.id, '***********');
 	await invests.close(req.query.id);
 	return res.status(200).json({'status': 'success'});
 });
+
+app.get('/api/update-eq', async (req, res) =>{
+	eq[req.query.id] = req.query.eq;
+	return res.status(200).json({'status': 'success'});
+});
+
+app.get('/api/exchange', async (req, res) => {
+	let price = await invests.usdExchange();
+	console.log('exchange rate of usd to inr ----------->',price);
+	usdInr = price;
+	return res.status(200).json(price);
+})
 
 app.listen(PORT, '0.0.0.0', ()=>{
 	console.log(`${PORT}`);
