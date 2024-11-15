@@ -252,16 +252,19 @@ function setup(){
 	let btnGraphs = document.querySelectorAll('.graph');
 	console.log(btnDetails);
 	btnDetails.forEach((btnDetail) =>{
+		let isListener = false;
 		btnDetail.addEventListener("click", async () => {
 			//fetch function needed it will query for history of the id 
 			const parentCtr =  btnDetail.offsetParent;
-			btnGraph = btnDetail.offsetParent.querySelector('.graph');
+			let btnGraph = btnDetail.offsetParent.querySelector('.graph');
+			
 			if ((btnDetail.innerText).includes("↑")){
 				btnDetail.innerText = "Graph ↓";
 				btnGraph.classList.remove("hide");
 			}else {
 				btnDetail.innerText = "Graph ↑";
 				btnGraph.classList.add("hide");
+				//switchs.removeEventListener('change', switchHandler);
 				return;
 			}
 			// fetching data for ghrap 	
@@ -323,7 +326,7 @@ function setup(){
 			//switch changing data from algo price to real price;
 			let switchs = document.getElementById(`${parseInt(parentCtr.id)}mySwitch`);
 			 //switch function for switching grpah data ...
-			switchHandler = (event, btnGraph, xValues, yValues, id) =>{
+			let switchHandler = (event, btnGraph, xValues, yValues, id) =>{
 			// this function switch data in graph
             	let newXValues = [];
             	let newYValues = [];
@@ -339,27 +342,28 @@ function setup(){
 							hour12: false
 						});
 						newXValues.push(date);
-						newYValues.push(fromLocal[i].RealPrice);
+						newYValues.push(parseFloat(fromLocal[i].RealPrice.replace(/,/g, '')));
 					}
-
+				console.log('new values on switch --->',newYValues);
 				} else {
 					console.log('Switched to Algo Price data');
 					newXValues = xValues; // AlgoPrice data
 					newYValues = yValues;
 				}
-				console.log('new values on switch --->',newXValues)
+				console.log('new values on switch --->',newYValues);
 				btnGraph.chart.data.labels = newXValues;
 				btnGraph.chart.data.datasets[0].data = newYValues;
 				btnGraph.chart.update();
+				btnGraph.chart.render();
 			}
 
-
-			switchs.removeEventListener('change', switchHandler); // remove existing event listener to remvoe glitchy issue
-			switchs.addEventListener('change', (event) => {
-				switchHandler(event, btnGraph, xValues, yValues, parseInt(parentCtr.id));
-			});
-
-
+			//switchs.removeEventListener('change', switchHandler); // remove existing event listener to remvoe glitchy issue
+			if (!isListener){
+				switchs.addEventListener('change', (event) => {
+					switchHandler(event, btnGraph, xValues, yValues, parseInt(parentCtr.id));
+					isListener = true;
+				});
+			}
 		});
 	});
 
@@ -383,7 +387,6 @@ function setup(){
 		}).then(response => {
 			if (!response.ok){
 				throw new Error(response);
-				console.log('custom  -->',response);
 				callback(response)
 			}
 			return response.json().then(data => {
@@ -392,7 +395,6 @@ function setup(){
 		}).catch((error) => {
 			console.log(error);
 			callback(error);
-			console.error(error);
 		});
 	}
 
